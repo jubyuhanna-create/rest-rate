@@ -7,6 +7,9 @@
 // ── Config ──────────────────────────────────
 const WEBHOOK_URL = 'https://hook.eu1.make.com/lw2a19ge56y3mtp4imbe7cxfalbnxsyi';
 
+// ── State ────────────────────────────────────
+const restaurantID  = new URLSearchParams(window.location.search).get('restaurant') || 'unknown';
+
 // ── הוסף כאן מסעדות חדשות ──────────────────
 // 'restaurant_id': 'קישור Google Reviews'
 const GOOGLE_LINKS = {
@@ -16,9 +19,6 @@ const GOOGLE_LINKS = {
 };
 
 const GOOGLE_REVIEW = GOOGLE_LINKS[restaurantID] || GOOGLE_LINKS['locanda'];
-
-// ── State ────────────────────────────────────
-const restaurantID  = new URLSearchParams(window.location.search).get('restaurant') || 'unknown';
 let   selectedRating = 0;
 let   currentLang    = 'he';
 
