@@ -8,17 +8,13 @@
 const WEBHOOK_URL = 'https://hook.eu1.make.com/lw2a19ge56y3mtp4imbe7cxfalbnxsyi';
 
 // ── State ────────────────────────────────────
-const restaurantID  = new URLSearchParams(window.location.search).get('restaurant') || 'unknown';
+const restaurantID = new URLSearchParams(window.location.search).get('restaurant') || 'unknown';
 
 // ── הוסף כאן מסעדות חדשות ──────────────────
-// 'restaurant_id': 'קישור Google Reviews'
 const GOOGLE_LINKS = {
-  'locanda':  'https://www.google.com/maps/place/Locanda+-+%D7%9C%D7%95%D7%A7%D7%A0%D7%93%D7%94+%D7%A0%D7%A6%D7%A8%D7%AA%E2%80%AD/@32.7029821,35.3114171,18z/data=!4m8!3m7!1s0x151c4e85c55e452f:0xdfd9f5d92e6d5805!8m2!3d32.7027778!4d35.3116667!9m1!1b1!16s%2Fg%2F11g6yqmcv8?authuser=0&entry=ttu&g_ep=EgoyMDI2MDMyNC4wIKXMDSoASAFQAw%3D%3D',
-  // 'burgeria':  'https://maps.google.com/?...',
-  // 'pizzaroma': 'https://maps.google.com/?...',
+  'locanda': 'https://www.google.com/maps/place/Locanda+-+%D7%9C%D7%95%D7%A7%D7%A0%D7%93%D7%94+%D7%A0%D7%A6%D7%A8%D7%AA%E2%80%AD/@32.7029821,35.3114171,18z/data=!4m8!3m7!1s0x151c4e85c55e452f:0xdfd9f5d92e6d5805!8m2!3d32.7027778!4d35.3116667!9m1!1b1!16s%2Fg%2F11g6yqmcv8?authuser=0&entry=ttu&g_ep=EgoyMDI2MDMyNC4wIKXMDSoASAFQAw%3D%3D',
+  // 'burgeria': 'https://maps.google.com/?...',
 };
-
-const GOOGLE_REVIEW = GOOGLE_LINKS[restaurantID] || GOOGLE_LINKS['locanda'];
 let   selectedRating = 0;
 let   currentLang    = 'he';
 
@@ -197,18 +193,19 @@ stars.forEach(star => {
 
 // ── Show feedback screen ──────────────────────
 function showFeedbackScreen(rating) {
-  googleLinkHigh.href = GOOGLE_REVIEW;
-  googleLinkLow.href  = GOOGLE_REVIEW;
+  const googleURL = GOOGLE_LINKS[restaurantID] || GOOGLE_LINKS['locanda'];
+  googleLinkHigh.href = googleURL;
+  googleLinkLow.href  = googleURL;
 
   if (rating >= 4) {
-    highBlock.classList.remove('hidden');
-    lowBlock.classList.add('hidden');
+    sendWebhook('');
+    window.open(googleURL, '_blank');
+    goTo('screen-thanks');
   } else {
     lowBlock.classList.remove('hidden');
     highBlock.classList.add('hidden');
+    goTo('screen-feedback');
   }
-
-  goTo('screen-feedback');
 }
 
 // ── Timestamp builder ─────────────────────────
