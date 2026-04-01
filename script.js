@@ -9,7 +9,7 @@ const restaurantID = new URLSearchParams(window.location.search).get('restaurant
 
 // ── הוסף כאן מסעדות חדשות ──────────────────
 const GOOGLE_LINKS = {
-  'locanda': 'https://www.google.com/maps/place/Locanda+-+%D7%9C%D7%95%D7%A7%D7%A0%D7%93%D7%94+%D7%A0%D7%A6%D7%A8%D7%AA%E2%80%AD/@32.7029821,35.3114171,18z/data=!4m8!3m7!1s0x151c4e85c55e452f:0xdfd9f5d92e6d5805!8m2!3d32.7027778!4d35.3116667!9m1!1b1!16s%2Fg%2F11g6yqmcv8?authuser=0&entry=ttu&g_ep=EgoyMDI2MDMyNC4wIKXMDSoASAFQAw%3D%3D',
+  'savor': 'https://www.google.com/maps/place/Savor/@32.7227651,35.3171106,17.78z/data=!4m8!3m7!1s0x151c4f0041414f2d:0xba250c48b9f5eec3!8m2!3d32.7249122!4d35.3188997!9m1!1b1!16s%2Fg%2F11yqx_dk0p?authuser=0&entry=ttu&g_ep=EgoyMDI2MDMyOS4wIKXMDSoASAFQAw%3D%3D',
   // 'burgeria': 'https://maps.google.com/?...',
 };
 
