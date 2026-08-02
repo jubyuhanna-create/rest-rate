@@ -9,7 +9,7 @@ const restaurantID = new URLSearchParams(window.location.search).get('restaurant
 
 // ── הוסף כאן מסעדות חדשות ──────────────────
 const GOOGLE_LINKS = {
-   'rasees' : 'https://sedor22.vercel.app/',
+  'rasees' : 'https://sedor22.vercel.app/',
   'savor': 'https://www.google.com/maps/place/Savor/@32.7227651,35.3171106,17.78z/data=!4m8!3m7!1s0x151c4f0041414f2d:0xba250c48b9f5eec3!8m2!3d32.7249122!4d35.3188997!9m1!1b1!16s%2Fg%2F11yqx_dk0p?authuser=0&entry=ttu&g_ep=EgoyMDI2MDMyOS4wIKXMDSoASAFQAw%3D%3D',
   // 'burgeria': 'https://maps.google.com/?...',
 };
