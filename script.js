@@ -7,7 +7,7 @@ const WEBHOOK_URL = 'https://hook.eu1.make.com/lw2a19ge56y3mtp4imbe7cxfalbnxsyi'
 
 const restaurantID = new URLSearchParams(window.location.search).get('restaurant') || 'unknown';
 
-// ── הוסף כאן מסעדות חדשות ──────────────────
+// ── هوسف هون مطاعم جديدة ──────────────────
 const GOOGLE_LINKS = {
   'rasees' : 'https://sedor22.vercel.app/',
   'savor': 'https://www.google.com/maps/place/Savor/@32.7227651,35.3171106,17.78z/data=!4m8!3m7!1s0x151c4f0041414f2d:0xba250c48b9f5eec3!8m2!3d32.7249122!4d35.3188997!9m1!1b1!16s%2Fg%2F11yqx_dk0p?authuser=0&entry=ttu&g_ep=EgoyMDI2MDMyOS4wIKXMDSoASAFQAw%3D%3D',
@@ -30,6 +30,8 @@ const i18n = {
     send_note:        'שלח והעתק לגוגל 🚀',
     note_placeholder: 'שתף את החוויה שלך... (נעתיק אותה לגוגל בשבילך!)',
     what_went_wrong:  'ספר לנו מה לא הלך...',
+    name_placeholder: 'שם (אופציונלי)',
+    phone_placeholder:'טלפון (אופציונלי)',
     thanks_title:     'תודה על המשוב שלך! 🙌',
     thanks_sub:       'המשוב שלך חשוב לנו מאד',
     copied_msg:       '✅ הטקסט הועתק! כעת הדבק אותו בגוגל ועזור לנו לגדול 🚀',
@@ -49,6 +51,8 @@ const i18n = {
     send_note:        'أرسل وانسخ على جوجل 🚀',
     note_placeholder: 'شارك تجربتك... (سننسخها لجوجل تلقائياً!)',
     what_went_wrong:  'أخبرنا بما حدث...',
+    name_placeholder: 'الاسم (اختياري)',
+    phone_placeholder:'رقم الهاتف (اختياري)',
     thanks_title:     'شكراً على تعليقك! 🙌',
     thanks_sub:       'رأيك يهمنا كثيراً',
     copied_msg:       '✅ تم النسخ! الصقه على جوجل وادعمنا 🚀',
@@ -68,6 +72,8 @@ const i18n = {
     send_note:        'Send & copy to Google 🚀',
     note_placeholder: 'Share your experience... (we\'ll copy it to Google for you!)',
     what_went_wrong:  'Tell us what went wrong...',
+    name_placeholder: 'Name (optional)',
+    phone_placeholder:'Phone (optional)',
     thanks_title:     'Thank you for your feedback! 🙌',
     thanks_sub:       'Your feedback means a lot to us',
     copied_msg:       '✅ Copied! Paste it on Google and support us 🚀',
@@ -88,6 +94,8 @@ const googleLinkHigh = document.getElementById('google-link-high');
 const googleLinkLow  = document.getElementById('google-link-low');
 const commentHigh    = document.getElementById('comment-high');
 const commentLow     = document.getElementById('comment-low');
+const nameLow        = document.getElementById('name-low');
+const phoneLow       = document.getElementById('phone-low');
 const sendHighBtn    = document.getElementById('send-high-btn');
 const sendLowBtn     = document.getElementById('send-low-btn');
 
@@ -102,7 +110,7 @@ function setLang(lang) {
   html.setAttribute('dir', t.dir);
   html.setAttribute('data-lang', lang);
   document.body.setAttribute('dir', t.dir);
-  document.querySelectorAll('textarea').forEach(el => {
+  document.querySelectorAll('textarea, input').forEach(el => {
     el.setAttribute('dir', t.dir);
     el.style.textAlign = t.dir === 'rtl' ? 'right' : 'left';
   });
@@ -207,13 +215,15 @@ function buildTimestamp() {
   return { iso: now.toISOString(), readable: `${local} (UTC${sign}${hh}:${mm})` };
 }
 
-async function sendWebhook(comment, priority) {
+async function sendWebhook(comment, priority, extra) {
   const ts = buildTimestamp();
   const payload = {
     restaurant_id:      restaurantID,
     rating:             selectedRating,
     rating_label:       `${selectedRating} / 5`,
     comment:            comment || '—',
+    name:               (extra && extra.name)  || '',
+    phone:              (extra && extra.phone) || '',
     language:           currentLang,
     priority:           priority || 'normal',
     timestamp_iso:      ts.iso,
@@ -289,45 +299,14 @@ function launchConfetti() {
   draw();
 }
 
-// ── Show thanks screen with confetti + copy ───
-function showThanksWithCopy(comment, isHigh) {
-  const t = i18n[currentLang];
-  const thanksScreen = document.getElementById('screen-thanks');
-
-  if (isHigh && comment) {
-    copyToClipboard(comment).then(copied => {
-      const msgEl = document.getElementById('thanks-copy-msg');
-      const googleBtn = document.getElementById('thanks-google-btn');
-      const skipBtn = document.getElementById('thanks-skip-btn');
-
-      if (msgEl) {
-        msgEl.textContent = copied ? t.copied_msg : t.thanks_sub;
-        msgEl.style.display = 'block';
-      }
-      if (googleBtn) {
-        googleBtn.textContent = t.google_paste_btn;
-        googleBtn.href = getGoogleURL();
-        googleBtn.style.display = 'flex';
-        googleBtn.onclick = (e) => {
-          e.preventDefault();
-          window.open(getGoogleURL(), '_blank');
-        };
-      }
-      if (skipBtn) {
-        skipBtn.textContent = t.skip_google;
-        skipBtn.style.display = 'block';
-      }
-    });
-    launchConfetti();
-  } else {
-    const msgEl = document.getElementById('thanks-copy-msg');
-    const googleBtn = document.getElementById('thanks-google-btn');
-    const skipBtn = document.getElementById('thanks-skip-btn');
-    if (msgEl) msgEl.style.display = 'none';
-    if (googleBtn) googleBtn.style.display = 'none';
-    if (skipBtn) skipBtn.style.display = 'none';
-  }
-
+// ── Show thanks screen (no-copy path, used for low ratings) ───
+function showThanksSimple() {
+  const msgEl = document.getElementById('thanks-copy-msg');
+  const googleBtn = document.getElementById('thanks-google-btn');
+  const skipBtn = document.getElementById('thanks-skip-btn');
+  if (msgEl) msgEl.style.display = 'none';
+  if (googleBtn) googleBtn.style.display = 'none';
+  if (skipBtn) skipBtn.style.display = 'none';
   goTo('screen-thanks');
 }
 
@@ -344,45 +323,64 @@ function setBtnLoading(btn, loading) {
   }
 }
 
-// High rating: send note + copy + confetti
+/* ═══════════════════════════════════════════
+   HIGH RATING — ONE CLICK TO GOOGLE
+   نفتح تبويب جوجل فوراً جوا نفس الكليك (قبل أي await)
+   عشان المتصفح ما يحجبه كـ popup، وبالتوازي منسخ
+   ومنبعت الـwebhook. هيك صار كل شي بضغطة وحدة.
+   ═══════════════════════════════════════════ */
 sendHighBtn.addEventListener('click', async () => {
   if (sendHighBtn.disabled) return;
   const comment = commentHigh.value.trim();
+
+  // افتح تبويب جوجل فوراً — لازم يصير هون بشكل sync
+  const googleWin = window.open(getGoogleURL(), '_blank');
+
   setBtnLoading(sendHighBtn, true);
+  if (comment) await copyToClipboard(comment);
   await sendWebhook(comment, 'positive');
-  showThanksWithCopy(comment, true);
+
+  launchConfetti();
+  const msgEl = document.getElementById('thanks-copy-msg');
+  if (msgEl && comment) {
+    msgEl.textContent = i18n[currentLang].copied_msg;
+    msgEl.style.display = 'block';
+  }
+  goTo('screen-thanks');
+  setBtnLoading(sendHighBtn, false);
 });
 
-// High rating: direct Google button
+// زر جوجل المباشر (نفس المنطق بالضبط، احتياطي)
 googleLinkHigh.addEventListener('click', (e) => {
   e.preventDefault();
   const comment = commentHigh.value.trim();
+  window.open(getGoogleURL(), '_blank');
   sendWebhook(comment, 'positive');
-  if (comment) {
-    copyToClipboard(comment).then(() => {
-      window.open(getGoogleURL(), '_blank');
-      showThanksWithCopy(comment, true);
-    });
-  } else {
-    window.open(getGoogleURL(), '_blank');
-    goTo('screen-thanks');
-  }
+  if (comment) copyToClipboard(comment);
+  goTo('screen-thanks');
 });
 
-// Low rating: send feedback
+/* ═══════════════════════════════════════════
+   LOW RATING — بياخد اسم وتلفون اختياري
+   ═══════════════════════════════════════════ */
 sendLowBtn.addEventListener('click', async () => {
   if (sendLowBtn.disabled) return;
   const comment = commentLow.value.trim();
+  const name  = nameLow  ? nameLow.value.trim()  : '';
+  const phone = phoneLow ? phoneLow.value.trim() : '';
   setBtnLoading(sendLowBtn, true);
-  await sendWebhook(comment, 'urgent');
-  showThanksWithCopy('', false);
+  await sendWebhook(comment, 'urgent', { name, phone });
+  showThanksSimple();
+  setBtnLoading(sendLowBtn, false);
 });
 
 // Low rating: Google button (always available)
 googleLinkLow.addEventListener('click', (e) => {
   e.preventDefault();
-  sendWebhook(commentLow.value.trim(), 'normal');
+  const name  = nameLow  ? nameLow.value.trim()  : '';
+  const phone = phoneLow ? phoneLow.value.trim() : '';
   window.open(getGoogleURL(), '_blank');
+  sendWebhook(commentLow.value.trim(), 'normal', { name, phone });
   goTo('screen-thanks');
 });
 
