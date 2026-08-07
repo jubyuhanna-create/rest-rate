@@ -1,483 +1,387 @@
 /* ═══════════════════════════════════════════
-   RESTAURANT FEEDBACK — style.css
-   Aesthetic: Japanese Minimal · Warm & Focused
+   RESTAURANT FEEDBACK — script.js
    ═══════════════════════════════════════════ */
+'use strict';
 
-/* ── Tokens ── */
-:root {
-  --bg: #fafaf8;
-  --surface: #ffffff;
-  --ink: #111110;
-  --ink-soft: #6b6b65;
-  --ink-faint: #c5c5be;
-  --star-active: #f5a623;
-  --star-idle: #e8e8e2;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --radius-lg: 18px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 2px 24px rgba(0,0,0,0.07);
-  --shadow-btn: 0 2px 12px rgba(0,0,0,0.10);
-  --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-  --font-he: 'Noto Sans Hebrew', sans-serif;
-  --font-ar: 'Noto Sans Arabic', sans-serif;
-  --font-en: 'DM Sans', sans-serif;
-  --font: var(--font-he);
-}
+const WEBHOOK_URL = 'https://hook.eu1.make.com/lw2a19ge56y3mtp4imbe7cxfalbnxsyi';
 
-/* ── Reset ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+const restaurantID = new URLSearchParams(window.location.search).get('restaurant') || 'unknown';
 
-html, body {
-  height: 100%;
-  width: 100%;
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font);
-  -webkit-font-smoothing: antialiased;
-  overscroll-behavior: none;
-}
+// ── هوسف هون مطاعم جديدة ──────────────────
+const GOOGLE_LINKS = {
+  'rasees' : 'https://sedor22.vercel.app/',
+  'savor': 'https://www.google.com/maps/place/Savor/@32.7227651,35.3171106,17.78z/data=!4m8!3m7!1s0x151c4f0041414f2d:0xba250c48b9f5eec3!8m2!3d32.7249122!4d35.3188997!9m1!1b1!16s%2Fg%2F11yqx_dk0p?authuser=0&entry=ttu&g_ep=EgoyMDI2MDMyOS4wIKXMDSoASAFQAw%3D%3D',
+  // 'burgeria': 'https://maps.google.com/?...',
+};
 
-/* ── Lang switcher ── */
-.lang-bar {
-  position: fixed;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 6px;
-  z-index: 100;
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0,0,0,0.07);
-  border-radius: 100px;
-  padding: 5px 8px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
-}
+let selectedRating = 0;
+let currentLang    = 'he';
 
-.lang-btn {
-  font-family: var(--font-en);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  background: transparent;
-  border: none;
-  border-radius: 100px;
-  padding: 5px 14px;
-  color: var(--ink-soft);
-  cursor: pointer;
-  transition: var(--transition);
-  line-height: 1;
-}
-.lang-btn:hover { color: var(--ink); }
-.lang-btn.active {
-  background: var(--ink);
-  color: #fff;
-}
+const i18n = {
+  he: {
+    dir: 'rtl',
+    question:         'איך הייתה החוויה שלך?',
+    tap_hint:         'הקש על כוכב לדירוג',
+    positive_msg:     'שמחים שנהנית! 🙌',
+    negative_msg:     'נרצה להשתפר עבורך',
+    google_btn:       'שתף ביקורת בגוגל ⭐',
+    google_btn_small: 'השאר ביקורת בגוגל',
+    send_feedback:    'שלח משוב',
+    send_note:        'שלח והעתק לגוגל 🚀',
+    note_placeholder: 'שתף את החוויה שלך... (נעתיק אותה לגוגל בשבילך!)',
+    what_went_wrong:  'ספר לנו מה לא הלך...',
+    name_placeholder: 'שם (אופציונלי)',
+    phone_placeholder:'טלפון (אופציונלי)',
+    thanks_title:     'תודה על המשוב שלך! 🙌',
+    thanks_sub:       'המשוב שלך חשוב לנו מאד',
+    copied_msg:       '✅ הטקסט הועתק! כעת הדבק אותו בגוגל ועזור לנו לגדול 🚀',
+    google_paste_btn: '📋 הדבק את הביקורת שלך בגוגל',
+    sending:          'שולח...',
+    skip_google:      'דלג על גוגל',
+  },
+  ar: {
+    dir: 'rtl',
+    question:         'كيف كانت تجربتك؟',
+    tap_hint:         'اضغط على نجمة للتقييم',
+    positive_msg:     'يسعدنا أنك استمتعت! 🙌',
+    negative_msg:     'نريد التحسن من أجلك',
+    google_btn:       'شارك تقييمك على جوجل ⭐',
+    google_btn_small: 'اترك تقييماً على جوجل',
+    send_feedback:    'أرسل التعليق',
+    send_note:        'أرسل وانسخ على جوجل 🚀',
+    note_placeholder: 'شارك تجربتك... (سننسخها لجوجل تلقائياً!)',
+    what_went_wrong:  'أخبرنا بما حدث...',
+    name_placeholder: 'الاسم (اختياري)',
+    phone_placeholder:'رقم الهاتف (اختياري)',
+    thanks_title:     'شكراً على تعليقك! 🙌',
+    thanks_sub:       'رأيك يهمنا كثيراً',
+    copied_msg:       '✅ تم النسخ! الصقه على جوجل وادعمنا 🚀',
+    google_paste_btn: '📋 الصق تقييمك على جوجل',
+    sending:          'جارٍ الإرسال...',
+    skip_google:      'تخطي جوجل',
+  },
+  en: {
+    dir: 'ltr',
+    question:         'How was your experience?',
+    tap_hint:         'Tap a star to rate',
+    positive_msg:     "We're glad you enjoyed it! 🙌",
+    negative_msg:     'We want to improve for you',
+    google_btn:       'Leave a review on Google ⭐',
+    google_btn_small: 'Leave a review on Google',
+    send_feedback:    'Send feedback',
+    send_note:        'Send & copy to Google 🚀',
+    note_placeholder: 'Share your experience... (we\'ll copy it to Google for you!)',
+    what_went_wrong:  'Tell us what went wrong...',
+    name_placeholder: 'Name (optional)',
+    phone_placeholder:'Phone (optional)',
+    thanks_title:     'Thank you for your feedback! 🙌',
+    thanks_sub:       'Your feedback means a lot to us',
+    copied_msg:       '✅ Copied! Paste it on Google and support us 🚀',
+    google_paste_btn: '📋 Paste your review on Google',
+    sending:          'Sending...',
+    skip_google:      'Skip Google',
+  },
+};
 
-/* ── Screen system ── */
-.screen {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 24px 40px;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(18px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
-}
+const html     = document.documentElement;
+const stars    = document.querySelectorAll('.star');
+const screens  = document.querySelectorAll('.screen');
+const langBtns = document.querySelectorAll('.lang-btn');
 
-.screen.active {
-  opacity: 1;
-  pointer-events: all;
-  transform: translateY(0);
-}
+const highBlock      = document.getElementById('high-rating-block');
+const lowBlock       = document.getElementById('low-rating-block');
+const googleLinkHigh = document.getElementById('google-link-high');
+const googleLinkLow  = document.getElementById('google-link-low');
+const commentHigh    = document.getElementById('comment-high');
+const commentLow     = document.getElementById('comment-low');
+const nameLow        = document.getElementById('name-low');
+const phoneLow       = document.getElementById('phone-low');
+const sendHighBtn    = document.getElementById('send-high-btn');
+const sendLowBtn     = document.getElementById('send-low-btn');
 
-.screen.exit {
-  opacity: 0;
-  transform: translateY(-18px);
-  pointer-events: none;
-}
-
-.screen-inner {
-  width: 100%;
-  max-width: 420px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  text-align: center;
+function getGoogleURL() {
+  return GOOGLE_LINKS[restaurantID] || GOOGLE_LINKS['locanda'];
 }
 
-/* ── Screen 1: Rating ── */
-.logo-mark {
-  font-size: 28px;
-  color: var(--star-active);
-  margin-bottom: 36px;
-  opacity: 0.85;
-  animation: breathe 4s ease-in-out infinite;
+function setLang(lang) {
+  currentLang = lang;
+  const t = i18n[lang];
+  html.setAttribute('lang', lang);
+  html.setAttribute('dir', t.dir);
+  html.setAttribute('data-lang', lang);
+  document.body.setAttribute('dir', t.dir);
+  document.querySelectorAll('textarea, input').forEach(el => {
+    el.setAttribute('dir', t.dir);
+    el.style.textAlign = t.dir === 'rtl' ? 'right' : 'left';
+  });
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (t[key] !== undefined) el.setAttribute('placeholder', t[key]);
+  });
+  langBtns.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  const starsRow = document.getElementById('stars-row');
+  if (starsRow) starsRow.style.flexDirection = t.dir === 'rtl' ? 'row-reverse' : 'row';
 }
 
-@keyframes breathe {
-  0%, 100% { transform: scale(1); opacity: 0.85; }
-  50% { transform: scale(1.12); opacity: 1; }
+langBtns.forEach(btn => btn.addEventListener('click', () => setLang(btn.dataset.lang)));
+
+function goTo(screenId) {
+  const target = document.getElementById(screenId);
+  screens.forEach(s => {
+    if (s.classList.contains('active')) {
+      s.classList.add('exit');
+      s.classList.remove('active');
+      setTimeout(() => s.classList.remove('exit'), 400);
+    }
+  });
+  setTimeout(() => target.classList.add('active'), 60);
 }
 
-.main-question {
-  font-size: clamp(22px, 6vw, 30px);
-  font-weight: 500;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  margin-bottom: 10px;
+function highlightStars(value) {
+  stars.forEach(s => {
+    const v = parseInt(s.dataset.val);
+    s.classList.toggle('selected', v <= value);
+    s.classList.toggle('hovered', v <= value);
+  });
 }
 
-.sub-hint {
-  font-size: 13px;
-  color: var(--ink-faint);
-  margin-bottom: 40px;
-  letter-spacing: 0.01em;
+function resetStarHover() {
+  stars.forEach(s => {
+    s.classList.remove('hovered');
+    if (selectedRating > 0) {
+      s.classList.toggle('selected', parseInt(s.dataset.val) <= selectedRating);
+    }
+  });
 }
 
-/* Stars */
-.stars-row {
-  display: flex;
-  gap: 10px;
-  flex-direction: row-reverse; /* RTL-friendly: star 5 on right visually */
-  margin-bottom: 0;
+stars.forEach(star => {
+  const val = parseInt(star.dataset.val);
+  star.addEventListener('mouseenter', () => highlightStars(val));
+  star.addEventListener('mouseleave', resetStarHover);
+  star.addEventListener('click', () => {
+    selectedRating = val;
+    stars.forEach(s => {
+      if (parseInt(s.dataset.val) <= val) {
+        s.classList.add('pop');
+        setTimeout(() => s.classList.remove('pop'), 350);
+      }
+    });
+    highlightStars(val);
+    setTimeout(() => showFeedbackScreen(val), 420);
+  });
+  star.addEventListener('touchstart', e => { e.preventDefault(); highlightStars(val); }, { passive: false });
+  star.addEventListener('touchend', e => {
+    e.preventDefault();
+    selectedRating = val;
+    stars.forEach(s => {
+      if (parseInt(s.dataset.val) <= val) {
+        s.classList.add('pop');
+        setTimeout(() => s.classList.remove('pop'), 350);
+      }
+    });
+    highlightStars(val);
+    setTimeout(() => showFeedbackScreen(val), 420);
+  }, { passive: false });
+});
+
+function showFeedbackScreen(rating) {
+  const url = getGoogleURL();
+  googleLinkHigh.href = url;
+  googleLinkLow.href  = url;
+  if (rating >= 4) {
+    highBlock.classList.remove('hidden');
+    lowBlock.classList.add('hidden');
+  } else {
+    lowBlock.classList.remove('hidden');
+    highBlock.classList.add('hidden');
+  }
+  goTo('screen-feedback');
 }
 
-/* For LTR language, we reset this via JS */
-[dir="ltr"] .stars-row { flex-direction: row; }
-
-.star {
-  font-size: 52px;
-  line-height: 1;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--star-idle);
-  transition: color 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
-  padding: 4px;
-  border-radius: 4px;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
+function buildTimestamp() {
+  const now    = new Date();
+  const offset = -now.getTimezoneOffset();
+  const sign   = offset >= 0 ? '+' : '-';
+  const hh     = String(Math.floor(Math.abs(offset) / 60)).padStart(2, '0');
+  const mm     = String(Math.abs(offset) % 60).padStart(2, '0');
+  const local  = now.toLocaleString('en-GB', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  });
+  return { iso: now.toISOString(), readable: `${local} (UTC${sign}${hh}:${mm})` };
 }
 
-.star:hover,
-.star.hovered {
-  transform: scale(1.15);
+async function sendWebhook(comment, priority, extra) {
+  const ts = buildTimestamp();
+  const payload = {
+    restaurant_id:      restaurantID,
+    rating:             selectedRating,
+    rating_label:       `${selectedRating} / 5`,
+    comment:            comment || '—',
+    name:               (extra && extra.name)  || '',
+    phone:              (extra && extra.phone) || '',
+    language:           currentLang,
+    priority:           priority || 'normal',
+    timestamp_iso:      ts.iso,
+    timestamp_readable: ts.readable,
+  };
+  try {
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.warn('Webhook failed:', err);
+  }
 }
 
-.star.selected {
-  color: var(--star-active);
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      return true;
+    } catch { return false; }
+  }
 }
 
-.star.pop {
-  animation: star-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+// ── Confetti ──────────────────────────────────
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const pieces = Array.from({ length: 80 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * -canvas.height,
+    r: Math.random() * 8 + 4,
+    d: Math.random() * 80 + 20,
+    color: ['#f5a623','#2563eb','#10b981','#f43f5e','#a855f7'][Math.floor(Math.random()*5)],
+    tilt: Math.random() * 10 - 10,
+    tiltAngle: 0,
+    tiltSpeed: Math.random() * 0.1 + 0.05,
+  }));
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.tiltAngle += p.tiltSpeed;
+      p.y += Math.cos(frame / 20 + p.d) + 2;
+      p.x += Math.sin(frame / 30) * 0.5;
+      p.tilt = Math.sin(p.tiltAngle) * 12;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.ellipse(p.x + p.tilt, p.y, p.r, p.r / 2, p.tilt * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    frame++;
+    if (frame < 180) requestAnimationFrame(draw);
+    else { ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.style.display = 'none'; }
+  }
+  draw();
 }
 
-@keyframes star-pop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.35); }
-  100% { transform: scale(1); }
+// ── Show thanks screen (no-copy path, used for low ratings) ───
+function showThanksSimple() {
+  const msgEl = document.getElementById('thanks-copy-msg');
+  const googleBtn = document.getElementById('thanks-google-btn');
+  const skipBtn = document.getElementById('thanks-skip-btn');
+  if (msgEl) msgEl.style.display = 'none';
+  if (googleBtn) googleBtn.style.display = 'none';
+  if (skipBtn) skipBtn.style.display = 'none';
+  goTo('screen-thanks');
 }
 
-/* ── Screen 2: Feedback ── */
-.rating-block {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
+function setBtnLoading(btn, loading) {
+  if (loading) {
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn._originalText = btn.textContent;
+    btn.textContent = i18n[currentLang].sending;
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.textContent = btn._originalText;
+  }
 }
 
-.rating-block.hidden { display: none; }
+/* ═══════════════════════════════════════════
+   HIGH RATING — ONE CLICK TO GOOGLE
+   نفتح تبويب جوجل فوراً جوا نفس الكليك (قبل أي await)
+   عشان المتصفح ما يحجبه كـ popup، وبالتوازي منسخ
+   ومنبعت الـwebhook. هيك صار كل شي بضغطة وحدة.
+   ═══════════════════════════════════════════ */
+sendHighBtn.addEventListener('click', async () => {
+  if (sendHighBtn.disabled) return;
+  const comment = commentHigh.value.trim();
 
-.emoji-display {
-  font-size: 52px;
-  line-height: 1;
-  animation: drop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
+  // افتح تبويب جوجل فوراً — لازم يصير هون بشكل sync
+  const googleWin = window.open(getGoogleURL(), '_blank');
 
-@keyframes drop-in {
-  from { opacity: 0; transform: scale(0.5) translateY(-10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
+  setBtnLoading(sendHighBtn, true);
+  if (comment) await copyToClipboard(comment);
+  await sendWebhook(comment, 'positive');
 
-.feedback-title {
-  font-size: clamp(19px, 5vw, 25px);
-  font-weight: 500;
-  color: var(--ink);
-  line-height: 1.3;
-}
+  launchConfetti();
+  const msgEl = document.getElementById('thanks-copy-msg');
+  if (msgEl && comment) {
+    msgEl.textContent = i18n[currentLang].copied_msg;
+    msgEl.style.display = 'block';
+  }
+  goTo('screen-thanks');
+  setBtnLoading(sendHighBtn, false);
+});
 
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-family: var(--font);
-  font-size: 15px;
-  font-weight: 500;
-  text-decoration: none;
-  border: none;
-  border-radius: var(--radius-lg);
-  padding: 15px 28px;
-  cursor: pointer;
-  width: 100%;
-  transition: var(--transition);
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  letter-spacing: -0.01em;
-  line-height: 1;
-}
+// زر جوجل المباشر (نفس المنطق بالضبط، احتياطي)
+googleLinkHigh.addEventListener('click', (e) => {
+  e.preventDefault();
+  const comment = commentHigh.value.trim();
+  window.open(getGoogleURL(), '_blank');
+  sendWebhook(comment, 'positive');
+  if (comment) copyToClipboard(comment);
+  goTo('screen-thanks');
+});
 
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* ═══════════════════════════════════════════
+   LOW RATING — بياخد اسم وتلفون اختياري
+   ═══════════════════════════════════════════ */
+sendLowBtn.addEventListener('click', async () => {
+  if (sendLowBtn.disabled) return;
+  const comment = commentLow.value.trim();
+  const name  = nameLow  ? nameLow.value.trim()  : '';
+  const phone = phoneLow ? phoneLow.value.trim() : '';
+  setBtnLoading(sendLowBtn, true);
+  await sendWebhook(comment, 'urgent', { name, phone });
+  showThanksSimple();
+  setBtnLoading(sendLowBtn, false);
+});
 
-.btn-primary {
-  background: var(--ink);
-  color: #fff;
-  box-shadow: var(--shadow-btn);
-}
-.btn-primary:hover:not(:disabled) {
-  background: #2a2a28;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.16);
-}
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0);
-}
+// Low rating: Google button (always available)
+googleLinkLow.addEventListener('click', (e) => {
+  e.preventDefault();
+  const name  = nameLow  ? nameLow.value.trim()  : '';
+  const phone = phoneLow ? phoneLow.value.trim() : '';
+  window.open(getGoogleURL(), '_blank');
+  sendWebhook(commentLow.value.trim(), 'normal', { name, phone });
+  goTo('screen-thanks');
+});
 
-.btn-google {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 2px 16px rgba(37,99,235,0.30);
-}
-.btn-google:hover:not(:disabled) {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 22px rgba(37,99,235,0.35);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid rgba(0,0,0,0.14);
-  color: var(--ink);
-}
-.btn-outline:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(37,99,235,0.04);
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--ink-soft);
-  font-size: 13px;
-  padding: 10px 16px;
-  width: auto;
-}
-.btn-ghost:hover { color: var(--ink); }
-
-.btn-icon {
-  font-size: 16px;
-  line-height: 1;
-}
-
-/* Note / Textarea */
-.note-input {
-  width: 100%;
-  font-family: var(--font);
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1.5px solid rgba(0,0,0,0.10);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-  resize: none;
-  outline: none;
-  transition: border-color var(--transition), box-shadow var(--transition);
-  line-height: 1.55;
-}
-.note-input:focus {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 3px rgba(17,17,16,0.07);
-}
-
-.note-input--prominent {
-  min-height: 110px;
-  font-size: 15px;
-}
-
-/* Optional note block */
-.optional-note {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  opacity: 0;
-  transform: translateY(10px);
-  animation: fade-up 0.35s 0.15s ease forwards;
-}
-
-@keyframes fade-up {
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Optional contact fields (name + phone) for low ratings */
-.optional-contact {
-  width: 100%;
-  display: flex;
-  gap: 8px;
-}
-.optional-contact .note-input {
-  padding: 12px 14px;
-  font-size: 13px;
-}
-@media (max-width: 360px) {
-  .optional-contact { flex-direction: column; }
-}
-
-/* Button stack */
-.btn-stack {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* ── Screen 3: Thanks ── */
-.thanks-icon {
-  font-size: 62px;
-  line-height: 1;
-  margin-bottom: 24px;
-  animation: drop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-.thanks-title {
-  font-size: clamp(22px, 6vw, 28px);
-  font-weight: 500;
-  color: var(--ink);
-  margin-bottom: 10px;
-}
-
-.thanks-sub {
-  font-size: 15px;
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
-
-/* ── Loading spinner on btn ── */
-.btn.loading .btn-label { opacity: 0; }
-.btn.loading::after {
-  content: '';
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255,255,255,0.4);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-.btn { position: relative; }
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* ── RTL / LTR ── */
-[dir="ltr"] .stars-row { flex-direction: row; }
-[dir="rtl"] .stars-row { flex-direction: row-reverse; }
-
-/* ── Font switching ── */
-html[data-lang="he"] { --font: var(--font-he); }
-html[data-lang="ar"] { --font: var(--font-ar); }
-html[data-lang="en"] { --font: var(--font-en); }
-
-/* ── Mobile niceties ── */
-@media (max-width: 375px) {
-  .star { font-size: 44px; gap: 6px; }
-  .stars-row { gap: 6px; }
-}
-
-@media (min-height: 700px) {
-  .screen { align-items: center; }
-}
-
-/* ── Confetti Canvas ── */
-#confetti-canvas {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 999;
-  display: none;
-}
-
-/* ── Pulse animation for main CTA ── */
-.btn-pulse {
-  animation: pulse-gold 2s ease-in-out infinite;
-}
-@keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245,166,35,0.5); }
-  50% { box-shadow: 0 0 0 12px rgba(245,166,35,0); }
-}
-
-/* ── Golden Google button (thanks screen) ── */
-.btn-google-gold {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #f5a623, #f0830a);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
-  padding: 18px 28px;
-  border-radius: 18px;
-  text-decoration: none;
-  width: 100%;
-  margin-top: 16px;
-  animation: pulse-gold 2s ease-in-out infinite;
-  transition: transform 0.15s ease;
-  border: none;
-  cursor: pointer;
-}
-.btn-google-gold:hover { transform: translateY(-2px); }
-
-/* ── Thanks copy message ── */
-.thanks-copy-msg {
-  font-size: 15px;
-  color: #059669;
-  font-weight: 500;
-  background: #ecfdf5;
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin-top: 16px;
-  line-height: 1.5;
-  text-align: center;
-  width: 100%;
-}
-
-/* ── Skip button ── */
-.btn-skip {
-  background: none;
-  border: none;
-  color: var(--ink-faint);
-  font-size: 13px;
-  cursor: pointer;
-  margin-top: 12px;
-  padding: 8px;
-  font-family: var(--font);
-}
-.btn-skip:hover { color: var(--ink-soft); }
+setLang('he');
