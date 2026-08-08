@@ -10,7 +10,7 @@ const restaurantID = new URLSearchParams(window.location.search).get('restaurant
 // ── هوسف هون مطاعم جديدة ──────────────────
 const GOOGLE_LINKS = {
   'rasees' : 'https://www.google.com/maps/place/Rasees+Restaurant+%7C+%D7%9E%D7%A1%D7%A2%D7%93%D7%AA+%D7%A8%D7%A1%D7%99%D7%A1+%D7%A0%D7%A6%D7%A8%D7%AA+%7C+%D9%85%D8%B7%D8%B9%D9%85+%D8%B1%D8%B3%D9%8A%D8%B3+%D8%A7%D9%84%D9%86%D8%A7%D8%B5%D8%B1%D8%A9%E2%80%AD/@32.699028,35.2951012,17z/data=!3m1!4b1!4m6!3m5!1s0x151c4dbde123f269:0xc982da59852bf0b!8m2!3d32.699028!4d35.2976761!16s%2Fg%2F11zh8kp_1b?entry=ttu',
-  'savor': 'https://www.google.com/maps/place/Savor/@32.7227651,35.3171106,17.78z/data=!4m8!3m7!1s0x151c4f0041414f2d:0xba250c48b9f5eec3!8m2!3d32.7249122!4d35.3188997!9m1!1b1!16s%2Fg%2F11yqx_dk0p?authuser=0&entry=ttu&g_ep=EgoyMDI2MDMyOS4wIKXMDSoASAFQAw%3D%3D',
+  'savor': 'https://www.google.com/maps/place/Rasees+Restaurant+%7C+%D7%9E%D7%A1%D7%A2%D7%93%D7%AA+%D7%A8%D7%A1%D7%99%D7%A1+%D7%A0%D7%A6%D7%A8%D7%AA+%7C+%D9%85%D8%B7%D8%B9%D9%85+%D8%B1%D8%B3%D9%8A%D8%B3+%D8%A7%D9%84%D9%86%D8%A7%D8%B5%D8%B1%D8%A9%E2%80%AD/@32.699028,35.2951012,17z/data=!3m1!4b1!4m6!3m5!1s0x151c4dbde123f269:0xc982da59852bf0b!8m2!3d32.699028!4d35.2976761!16s%2Fg%2F11zh8kp_1b?entry=ttu',
   // 'burgeria': 'https://maps.google.com/?...',
 };
 
