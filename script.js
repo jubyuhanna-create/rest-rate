@@ -38,6 +38,7 @@ const i18n = {
     google_paste_btn: '📋 הדבק את הביקורת שלך בגוגל',
     sending:          'שולח...',
     skip_google:      'דלג על גוגל',
+    redirecting_msg:  'מעביר אותך לגוגל... 🚀',
   },
   ar: {
     dir: 'rtl',
@@ -59,6 +60,7 @@ const i18n = {
     google_paste_btn: '📋 الصق تقييمك على جوجل',
     sending:          'جارٍ الإرسال...',
     skip_google:      'تخطي جوجل',
+    redirecting_msg:  'جارِ تحويلك لجوجل... 🚀',
   },
   en: {
     dir: 'ltr',
@@ -80,6 +82,7 @@ const i18n = {
     google_paste_btn: '📋 Paste your review on Google',
     sending:          'Sending...',
     skip_google:      'Skip Google',
+    redirecting_msg:  'Redirecting you to Google... 🚀',
   },
 };
 
@@ -163,50 +166,6 @@ function resetStarHover() {
   });
 }
 
-stars.forEach(star => {
-  const val = parseInt(star.dataset.val);
-  star.addEventListener('mouseenter', () => highlightStars(val));
-  star.addEventListener('mouseleave', resetStarHover);
-  star.addEventListener('click', () => {
-    selectedRating = val;
-    stars.forEach(s => {
-      if (parseInt(s.dataset.val) <= val) {
-        s.classList.add('pop');
-        setTimeout(() => s.classList.remove('pop'), 350);
-      }
-    });
-    highlightStars(val);
-    setTimeout(() => showFeedbackScreen(val), 420);
-  });
-  star.addEventListener('touchstart', e => { e.preventDefault(); highlightStars(val); }, { passive: false });
-  star.addEventListener('touchend', e => {
-    e.preventDefault();
-    selectedRating = val;
-    stars.forEach(s => {
-      if (parseInt(s.dataset.val) <= val) {
-        s.classList.add('pop');
-        setTimeout(() => s.classList.remove('pop'), 350);
-      }
-    });
-    highlightStars(val);
-    setTimeout(() => showFeedbackScreen(val), 420);
-  }, { passive: false });
-});
-
-function showFeedbackScreen(rating) {
-  const url = getGoogleURL();
-  googleLinkHigh.href = url;
-  googleLinkLow.href  = url;
-  if (rating >= 4) {
-    highBlock.classList.remove('hidden');
-    lowBlock.classList.add('hidden');
-  } else {
-    lowBlock.classList.remove('hidden');
-    highBlock.classList.add('hidden');
-  }
-  goTo('screen-feedback');
-}
-
 function buildTimestamp() {
   const now    = new Date();
   const offset = -now.getTimezoneOffset();
@@ -243,6 +202,65 @@ async function sendWebhook(comment, priority, extra) {
   } catch (err) {
     console.warn('Webhook failed:', err);
   }
+}
+
+/* ═══════════════════════════════════════════
+   نجوم: 4-5 → مباشرة عالتقييم بجوجل (بدون شاشة وسط)
+            1-3 → شاشة الفيدباك الخاص متل قبل
+   ═══════════════════════════════════════════ */
+function handleStarSelected(val) {
+  selectedRating = val;
+  stars.forEach(s => {
+    if (parseInt(s.dataset.val) <= val) {
+      s.classList.add('pop');
+      setTimeout(() => s.classList.remove('pop'), 350);
+    }
+  });
+  highlightStars(val);
+
+  if (val >= 4) {
+    // فتح تبويب جوجل فوراً — لازم يصير sync جوا الـ click مباشرة
+    window.open(getGoogleURL(), '_blank');
+    // إرسال webhook بالخلفية بدون تعليق (المستخدم ما كتب شي)
+    sendWebhook('', 'positive');
+    setTimeout(() => {
+      const msgEl = document.getElementById('thanks-copy-msg');
+      if (msgEl) {
+        msgEl.textContent = i18n[currentLang].redirecting_msg;
+        msgEl.style.display = 'block';
+      }
+      goTo('screen-thanks');
+    }, 380);
+  } else {
+    setTimeout(() => showFeedbackScreen(val), 420);
+  }
+}
+
+stars.forEach(star => {
+  const val = parseInt(star.dataset.val);
+  star.addEventListener('mouseenter', () => highlightStars(val));
+  star.addEventListener('mouseleave', resetStarHover);
+  star.addEventListener('click', () => handleStarSelected(val));
+  star.addEventListener('touchstart', e => { e.preventDefault(); highlightStars(val); }, { passive: false });
+  star.addEventListener('touchend', e => {
+    e.preventDefault();
+    handleStarSelected(val);
+  }, { passive: false });
+});
+
+function showFeedbackScreen(rating) {
+  const url = getGoogleURL();
+  googleLinkHigh.href = url;
+  googleLinkLow.href  = url;
+  // من هلق هاد المسار بيصير بس للتقييم المنخفض (1-3)، بس خليناها عامة احتياط
+  if (rating >= 4) {
+    highBlock.classList.remove('hidden');
+    lowBlock.classList.add('hidden');
+  } else {
+    lowBlock.classList.remove('hidden');
+    highBlock.classList.add('hidden');
+  }
+  goTo('screen-feedback');
 }
 
 async function copyToClipboard(text) {
@@ -329,22 +347,17 @@ function setBtnLoading(btn, loading) {
 }
 
 /* ═══════════════════════════════════════════
-   HIGH RATING — ONE CLICK TO GOOGLE
-   نفتح تبويب جوجل فوراً جوا نفس الكليك (قبل أي await)
-   عشان المتصفح ما يحجبه كـ popup، وبالتوازي منسخ
-   ومنبعت الـwebhook. هيك صار كل شي بضغطة وحدة.
+   زر "שלח והעתק לגוגל" داخل شاشة الفيدباك (احتياطي —
+   ما رح يبين للمستخدم أصلاً لأنو 4-5 نجوم بتتخطى هاي
+   الشاشة بالكامل، بس بيضل شغال إذا حدا رجع بالمتصفح)
    ═══════════════════════════════════════════ */
 sendHighBtn.addEventListener('click', async () => {
   if (sendHighBtn.disabled) return;
   const comment = commentHigh.value.trim();
-
-  // افتح تبويب جوجل فوراً — لازم يصير هون بشكل sync
   const googleWin = window.open(getGoogleURL(), '_blank');
-
   setBtnLoading(sendHighBtn, true);
   if (comment) await copyToClipboard(comment);
   await sendWebhook(comment, 'positive');
-
   launchConfetti();
   const msgEl = document.getElementById('thanks-copy-msg');
   if (msgEl && comment) {
@@ -355,7 +368,6 @@ sendHighBtn.addEventListener('click', async () => {
   setBtnLoading(sendHighBtn, false);
 });
 
-// زر جوجل المباشر (نفس المنطق بالضبط، احتياطي)
 googleLinkHigh.addEventListener('click', (e) => {
   e.preventDefault();
   const comment = commentHigh.value.trim();
@@ -379,7 +391,6 @@ sendLowBtn.addEventListener('click', async () => {
   setBtnLoading(sendLowBtn, false);
 });
 
-// Low rating: Google button (always available)
 googleLinkLow.addEventListener('click', (e) => {
   e.preventDefault();
   const name  = nameLow  ? nameLow.value.trim()  : '';
