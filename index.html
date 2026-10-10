@@ -15,7 +15,6 @@
 </head>
 <body>
 
-  <!-- Confetti canvas -->
   <canvas id="confetti-canvas"></canvas>
 
   <!-- Language Switcher -->
@@ -29,8 +28,8 @@
   <div class="screen active" id="screen-rating">
     <div class="screen-inner">
       <div class="logo-mark">✦</div>
-      <h1 class="main-question" data-i18n="question">איך הייתה החוויה שלך?</h1>
-      <p class="sub-hint" data-i18n="tap_hint">הקש על כוכב לדירוג</p>
+      <h1 class="main-question" data-i18n="question"></h1>
+      <p class="sub-hint" data-i18n="tap_hint"></p>
       <div class="stars-row" id="stars-row" role="group" aria-label="Rating">
         <button class="star" data-val="1" aria-label="1 star">★</button>
         <button class="star" data-val="2" aria-label="2 stars">★</button>
@@ -41,43 +40,29 @@
     </div>
   </div>
 
-  <!-- SCREEN 2: Feedback -->
+  <!-- SCREEN 2: Feedback — same options for every rating -->
   <div class="screen" id="screen-feedback">
     <div class="screen-inner">
+      <div class="rating-block">
+        <div class="emoji-display" id="fb-emoji">🙌</div>
+        <h2 class="feedback-title" id="fb-title"></h2>
 
-      <!-- High rating (4-5) -->
-      <div id="high-rating-block" class="rating-block hidden">
-        <div class="emoji-display">🙌</div>
-        <h2 class="feedback-title" data-i18n="positive_msg">שמחים שנהנית!</h2>
-        <div class="optional-note">
-          <textarea id="comment-high" class="note-input note-input--prominent" rows="4" data-i18n-placeholder="note_placeholder"></textarea>
-          <button class="btn btn-primary btn-pulse" id="send-high-btn" data-i18n="send_note">שלח והעתק לגוגל 🚀</button>
-          <a href="#" id="google-link-high" class="btn btn-google" target="_blank" rel="noopener">
-            <span data-i18n="google_btn">שתף ביקורת בגוגל ⭐</span>
-          </a>
-        </div>
-      </div>
+        <!-- Quick tags: tap to add to the text -->
+        <div class="chips" id="chips"></div>
 
-      <!-- Low rating (1-3) -->
-      <div id="low-rating-block" class="rating-block hidden">
-        <div class="emoji-display">🙏</div>
-        <h2 class="feedback-title" data-i18n="negative_msg">נרצה להשתפר עבורך</h2>
-        <textarea id="comment-low" class="note-input note-input--prominent" rows="4" data-i18n-placeholder="what_went_wrong"></textarea>
-
-        <!-- Optional contact info -->
-        <div class="optional-contact">
-          <input type="text" id="name-low" class="note-input" placeholder="שם (אופציונלי)" data-i18n-placeholder="name_placeholder" />
-          <input type="tel" id="phone-low" class="note-input" placeholder="טלפון (אופציונלי)" data-i18n-placeholder="phone_placeholder" />
-        </div>
+        <textarea id="comment" class="note-input note-input--prominent" rows="4"></textarea>
 
         <div class="btn-stack">
-          <button class="btn btn-primary" id="send-low-btn" data-i18n="send_feedback">שלח משוב</button>
-          <a href="#" id="google-link-low" class="btn btn-outline btn-google-small" target="_blank" rel="noopener">
-            <span data-i18n="google_btn_small">השאר ביקורת בגוגל</span>
-          </a>
+          <button class="btn btn-google" id="google-btn">
+            <span data-i18n="google_btn"></span>
+          </button>
+          <button class="btn btn-outline" id="private-btn">
+            <span data-i18n="private_btn"></span>
+          </button>
         </div>
-      </div>
 
+        <p class="privacy-note" data-i18n="privacy"></p>
+      </div>
     </div>
   </div>
 
@@ -85,15 +70,14 @@
   <div class="screen" id="screen-thanks">
     <div class="screen-inner">
       <div class="thanks-icon">🙌</div>
-      <h2 class="thanks-title" data-i18n="thanks_title">תודה על המשוב שלך!</h2>
-      <p class="thanks-sub" data-i18n="thanks_sub">המשוב שלך חשוב לנו מאד</p>
+      <h2 class="thanks-title" data-i18n="thanks_title"></h2>
+      <p class="thanks-sub" data-i18n="thanks_sub"></p>
 
-      <!-- Shown only for high ratings with copied text -->
+      <!-- Shown only after choosing Google -->
       <p id="thanks-copy-msg" class="thanks-copy-msg" style="display:none;"></p>
-      <a id="thanks-google-btn" href="#" class="btn btn-google-gold" target="_blank" rel="noopener" style="display:none;">
-        📋 הדבק את הביקורת שלך בגוגל
-      </a>
-      <button id="thanks-skip-btn" class="btn-skip" style="display:none;">דלג על גוגל</button>
+      <button id="thanks-google-btn" class="btn btn-google-gold" style="display:none;">
+        <span data-i18n="google_paste_btn"></span>
+      </button>
     </div>
   </div>
 
