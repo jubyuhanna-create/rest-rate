@@ -1,18 +1,32 @@
 /* ═══════════════════════════════════════════
    RESTAURANT FEEDBACK — script.js
+   Every rating gets the SAME Google option (no review gating).
    ═══════════════════════════════════════════ */
 'use strict';
 
 const WEBHOOK_URL = 'https://hook.eu1.make.com/lw2a19ge56y3mtp4imbe7cxfalbnxsyi';
 
-const restaurantID = new URLSearchParams(window.location.search).get('restaurant') || 'unknown';
-
-// ── هوسف هون مطاعم جديدة ──────────────────
-const GOOGLE_LINKS = {
-  'rasees' : 'https://g.page/r/CQu_UpilLZgMEAE/review',
-  'savor': 'https://www.google.com/maps/place/Rasees+Restaurant+%7C+%D7%9E%D7%A1%D7%A2%D7%93%D7%AA+%D7%A8%D7%A1%D7%99%D7%A1+%D7%A0%D7%A6%D7%A8%D7%AA+%7C+%D9%85%D8%B7%D8%B9%D9%85+%D8%B1%D8%B3%D9%8A%D8%B3+%D8%A7%D9%84%D9%86%D8%A7%D8%B5%D8%B1%D8%A9%E2%80%AD/@32.699028,35.2951012,17z/data=!3m1!4b1!4m6!3m5!1s0x151c4dbde123f269:0xc982da59852bf0b!8m2!3d32.699028!4d35.2976761!16s%2Fg%2F11zh8kp_1b?entry=ttu',
-  // 'burgeria': 'https://maps.google.com/?...',
+// ── Add new restaurants here ──────────────────
+// placeId: opens Google's "write a review" box directly (best).
+//          Find it at: https://developers.google.com/maps/documentation/places/web-service/place-id
+// mapsUrl: fallback if you don't have the placeId yet.
+const RESTAURANTS = {
+  'savor': {
+    placeId: '', // ← paste Savor's Place ID here (starts with ChIJ...)
+    mapsUrl: 'https://www.google.com/maps/place/Savor/@32.7227651,35.3171106,17.78z/data=!4m8!3m7!1s0x151c4f0041414f2d:0xba250c48b9f5eec3!8m2!3d32.7249122!4d35.3188997!9m1!1b1!16s%2Fg%2F11yqx_dk0p',
+  },
+  // 'burgeria': { placeId: 'ChIJ...', mapsUrl: '' },
 };
+
+const restaurantID = new URLSearchParams(window.location.search).get('restaurant') || 'unknown';
+const restaurant   = RESTAURANTS[restaurantID] || Object.values(RESTAURANTS)[0];
+
+function getGoogleURL() {
+  if (restaurant.placeId) {
+    return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(restaurant.placeId)}`;
+  }
+  return restaurant.mapsUrl;
+}
 
 let selectedRating = 0;
 let currentLang    = 'he';
@@ -22,95 +36,68 @@ const i18n = {
     dir: 'rtl',
     question:         'איך הייתה החוויה שלך?',
     tap_hint:         'הקש על כוכב לדירוג',
-    positive_msg:     'שמחים שנהנית! 🙌',
-    negative_msg:     'נרצה להשתפר עבורך',
-    google_btn:       'שתף ביקורת בגוגל ⭐',
-    google_btn_small: 'השאר ביקורת בגוגל',
-    send_feedback:    'שלח משוב',
-    send_note:        'שלח והעתק לגוגל 🚀',
-    note_placeholder: 'שתף את החוויה שלך... (נעתיק אותה לגוגל בשבילך!)',
-    what_went_wrong:  'ספר לנו מה לא הלך...',
-    name_placeholder: 'שם (אופציונלי)',
-    phone_placeholder:'טלפון (אופציונלי)',
-    thanks_title:     'תודה על המשוב שלך! 🙌',
-    thanks_sub:       'המשוב שלך חשוב לנו מאד',
-    copied_msg:       '✅ הטקסט הועתק! כעת הדבק אותו בגוגל ועזור לנו לגדול 🚀',
-    google_paste_btn: '📋 הדבק את הביקורת שלך בגוגל',
+    title_high:       'שמחים שנהנית!',
+    title_low:        'תודה על הכנות, נשמח לשמוע',
+    placeholder:      'ספר לנו במילים שלך... (אפשר להקיש על התגיות למעלה)',
+    google_btn:       '⭐ העתק ופרסם בגוגל',
+    private_btn:      '✉️ שלח רק לבעלים',
+    privacy:          'המשוב נשלח לבעלי העסק בלבד ולא נאסף מידע מזהה. ביקורת בגוגל היא פומבית.',
+    thanks_title:     'תודה על המשוב! 🙌',
+    thanks_sub:       'המשוב שלך חשוב לנו מאוד',
+    copied_msg:       '✅ הטקסט הועתק! הדבק אותו בחלון הביקורת של גוגל',
+    google_paste_btn: '📋 פתח שוב את גוגל',
     sending:          'שולח...',
-    skip_google:      'דלג על גוגל',
-    redirecting_msg:  'מעביר אותך לגוגל... 🚀',
+    chips_high: ['אוכל מעולה', 'שירות מהיר', 'צוות אדיב', 'אווירה נעימה', 'מחיר הוגן', 'נחזור שוב'],
+    chips_low:  ['זמן המתנה', 'איכות האוכל', 'שירות', 'ניקיון', 'מחיר', 'רעש'],
   },
   ar: {
     dir: 'rtl',
     question:         'كيف كانت تجربتك؟',
     tap_hint:         'اضغط على نجمة للتقييم',
-    positive_msg:     'يسعدنا أنك استمتعت! 🙌',
-    negative_msg:     'نريد التحسن من أجلك',
-    google_btn:       'شارك تقييمك على جوجل ⭐',
-    google_btn_small: 'اترك تقييماً على جوجل',
-    send_feedback:    'أرسل التعليق',
-    send_note:        'أرسل وانسخ على جوجل 🚀',
-    note_placeholder: 'شارك تجربتك... (سننسخها لجوجل تلقائياً!)',
-    what_went_wrong:  'أخبرنا بما حدث...',
-    name_placeholder: 'الاسم (اختياري)',
-    phone_placeholder:'رقم الهاتف (اختياري)',
+    title_high:       'يسعدنا أنك استمتعت!',
+    title_low:        'شكراً لصراحتك، يهمنا أن نسمع',
+    placeholder:      'احكِ لنا بكلماتك... (أو اضغط على الكلمات فوق)',
+    google_btn:       '⭐ انسخ وانشر على جوجل',
+    private_btn:      '✉️ أرسل لصاحب المكان فقط',
+    privacy:          'التعليق يصل لصاحب المكان فقط ولا نجمع معلومات شخصية. تقييم جوجل يكون علنياً.',
     thanks_title:     'شكراً على تعليقك! 🙌',
     thanks_sub:       'رأيك يهمنا كثيراً',
-    copied_msg:       '✅ تم النسخ! الصقه على جوجل وادعمنا 🚀',
-    google_paste_btn: '📋 الصق تقييمك على جوجل',
+    copied_msg:       '✅ تم النسخ! الصقه في نافذة التقييم على جوجل',
+    google_paste_btn: '📋 افتح جوجل مرة ثانية',
     sending:          'جارٍ الإرسال...',
-    skip_google:      'تخطي جوجل',
-    redirecting_msg:  'جارِ تحويلك لجوجل... 🚀',
+    chips_high: ['أكل ممتاز', 'خدمة سريعة', 'طاقم لطيف', 'أجواء حلوة', 'سعر معقول', 'رح نرجع'],
+    chips_low:  ['وقت الانتظار', 'جودة الأكل', 'الخدمة', 'النظافة', 'السعر', 'الضجة'],
   },
   en: {
     dir: 'ltr',
     question:         'How was your experience?',
     tap_hint:         'Tap a star to rate',
-    positive_msg:     "We're glad you enjoyed it! 🙌",
-    negative_msg:     'We want to improve for you',
-    google_btn:       'Leave a review on Google ⭐',
-    google_btn_small: 'Leave a review on Google',
-    send_feedback:    'Send feedback',
-    send_note:        'Send & copy to Google 🚀',
-    note_placeholder: 'Share your experience... (we\'ll copy it to Google for you!)',
-    what_went_wrong:  'Tell us what went wrong...',
-    name_placeholder: 'Name (optional)',
-    phone_placeholder:'Phone (optional)',
+    title_high:       "We're glad you enjoyed it!",
+    title_low:        'Thanks for being honest, tell us more',
+    placeholder:      'Tell us in your own words... (or tap the tags above)',
+    google_btn:       '⭐ Copy & post on Google',
+    private_btn:      '✉️ Send to the owner only',
+    privacy:          'Feedback goes to the owner only; no personal data is collected. Google reviews are public.',
     thanks_title:     'Thank you for your feedback! 🙌',
     thanks_sub:       'Your feedback means a lot to us',
-    copied_msg:       '✅ Copied! Paste it on Google and support us 🚀',
-    google_paste_btn: '📋 Paste your review on Google',
+    copied_msg:       '✅ Copied! Paste it into the Google review box',
+    google_paste_btn: '📋 Open Google again',
     sending:          'Sending...',
-    skip_google:      'Skip Google',
-    redirecting_msg:  'Redirecting you to Google... 🚀',
+    chips_high: ['Great food', 'Fast service', 'Friendly staff', 'Nice vibe', 'Fair price', 'Will be back'],
+    chips_low:  ['Wait time', 'Food quality', 'Service', 'Cleanliness', 'Price', 'Noise'],
   },
 };
 
-const html     = document.documentElement;
-const stars    = document.querySelectorAll('.star');
-const screens  = document.querySelectorAll('.screen');
-const langBtns = document.querySelectorAll('.lang-btn');
+const html       = document.documentElement;
+const stars      = document.querySelectorAll('.star');
+const screens    = document.querySelectorAll('.screen');
+const langBtns   = document.querySelectorAll('.lang-btn');
+const commentEl  = document.getElementById('comment');
+const chipsEl    = document.getElementById('chips');
+const googleBtn  = document.getElementById('google-btn');
+const privateBtn = document.getElementById('private-btn');
 
-const highBlock      = document.getElementById('high-rating-block');
-const lowBlock       = document.getElementById('low-rating-block');
-const googleLinkHigh = document.getElementById('google-link-high');
-const googleLinkLow  = document.getElementById('google-link-low');
-const commentHigh    = document.getElementById('comment-high');
-const commentLow     = document.getElementById('comment-low');
-const nameLow        = document.getElementById('name-low');
-const phoneLow       = document.getElementById('phone-low');
-const sendHighBtn    = document.getElementById('send-high-btn');
-const sendLowBtn     = document.getElementById('send-low-btn');
-
-function getGoogleURL() {
-  const url = GOOGLE_LINKS[restaurantID];
-  if (!url) {
-    console.warn(`No Google link found for restaurant "${restaurantID}" — falling back to default.`);
-    return GOOGLE_LINKS['rasees'];
-  }
-  return url;
-}
-
+// ── Language ──────────────────────────────────
 function setLang(lang) {
   currentLang = lang;
   const t = i18n[lang];
@@ -118,25 +105,18 @@ function setLang(lang) {
   html.setAttribute('dir', t.dir);
   html.setAttribute('data-lang', lang);
   document.body.setAttribute('dir', t.dir);
-  document.querySelectorAll('textarea, input').forEach(el => {
-    el.setAttribute('dir', t.dir);
-    el.style.textAlign = t.dir === 'rtl' ? 'right' : 'left';
-  });
+  commentEl.setAttribute('dir', t.dir);
+  commentEl.setAttribute('placeholder', t.placeholder);
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if (t[key] !== undefined) el.innerHTML = t[key];
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    const key = el.getAttribute('data-i18n-placeholder');
-    if (t[key] !== undefined) el.setAttribute('placeholder', t[key]);
+    if (t[key] !== undefined) el.textContent = t[key];
   });
   langBtns.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-  const starsRow = document.getElementById('stars-row');
-  if (starsRow) starsRow.style.flexDirection = t.dir === 'rtl' ? 'row-reverse' : 'row';
+  if (selectedRating) renderFeedbackTexts();
 }
-
 langBtns.forEach(btn => btn.addEventListener('click', () => setLang(btn.dataset.lang)));
 
+// ── Screens ───────────────────────────────────
 function goTo(screenId) {
   const target = document.getElementById(screenId);
   screens.forEach(s => {
@@ -149,23 +129,63 @@ function goTo(screenId) {
   setTimeout(() => target.classList.add('active'), 60);
 }
 
+// ── Stars ─────────────────────────────────────
 function highlightStars(value) {
-  stars.forEach(s => {
-    const v = parseInt(s.dataset.val);
-    s.classList.toggle('selected', v <= value);
-    s.classList.toggle('hovered', v <= value);
-  });
+  stars.forEach(s => s.classList.toggle('selected', parseInt(s.dataset.val) <= value));
 }
 
-function resetStarHover() {
+function pickRating(val) {
+  selectedRating = val;
   stars.forEach(s => {
-    s.classList.remove('hovered');
-    if (selectedRating > 0) {
-      s.classList.toggle('selected', parseInt(s.dataset.val) <= selectedRating);
+    if (parseInt(s.dataset.val) <= val) {
+      s.classList.add('pop');
+      setTimeout(() => s.classList.remove('pop'), 350);
     }
   });
+  highlightStars(val);
+  setTimeout(showFeedbackScreen, 420);
 }
 
+stars.forEach(star => {
+  const val = parseInt(star.dataset.val);
+  star.addEventListener('mouseenter', () => highlightStars(val));
+  star.addEventListener('mouseleave', () => highlightStars(selectedRating));
+  star.addEventListener('click', () => pickRating(val));
+  star.addEventListener('touchend', e => { e.preventDefault(); pickRating(val); }, { passive: false });
+});
+
+// ── Feedback screen (identical options for all ratings) ──
+function renderFeedbackTexts() {
+  const t = i18n[currentLang];
+  const high = selectedRating >= 4;
+  document.getElementById('fb-emoji').textContent = high ? '🙌' : '🙏';
+  document.getElementById('fb-title').textContent = high ? t.title_high : t.title_low;
+
+  chipsEl.innerHTML = '';
+  (high ? t.chips_high : t.chips_low).forEach(label => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.type = 'button';
+    chip.textContent = label;
+    chip.addEventListener('click', () => toggleChip(chip, label));
+    chipsEl.appendChild(chip);
+  });
+}
+
+function toggleChip(chip, label) {
+  const on = chip.classList.toggle('on');
+  let parts = commentEl.value.split(/[,،]\s*/).map(p => p.trim()).filter(Boolean);
+  parts = on ? [...parts, label] : parts.filter(p => p !== label);
+  commentEl.value = parts.join(currentLang === 'ar' ? '، ' : ', ');
+}
+
+function showFeedbackScreen() {
+  commentEl.value = '';
+  renderFeedbackTexts();
+  goTo('screen-feedback');
+}
+
+// ── Webhook ───────────────────────────────────
 function buildTimestamp() {
   const now    = new Date();
   const offset = -now.getTimezoneOffset();
@@ -179,90 +199,28 @@ function buildTimestamp() {
   return { iso: now.toISOString(), readable: `${local} (UTC${sign}${hh}:${mm})` };
 }
 
-async function sendWebhook(comment, priority, extra) {
+function sendWebhook(comment, destination) {
   const ts = buildTimestamp();
   const payload = {
     restaurant_id:      restaurantID,
     rating:             selectedRating,
     rating_label:       `${selectedRating} / 5`,
     comment:            comment || '—',
-    name:               (extra && extra.name)  || '',
-    phone:              (extra && extra.phone) || '',
     language:           currentLang,
-    priority:           priority || 'normal',
+    destination,                                   // 'google' | 'private'
+    priority:           selectedRating <= 3 ? 'urgent' : 'positive',
     timestamp_iso:      ts.iso,
     timestamp_readable: ts.readable,
   };
-  try {
-    await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch (err) {
-    console.warn('Webhook failed:', err);
-  }
+  return fetch(WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch(err => console.warn('Webhook failed:', err));
 }
 
-/* ═══════════════════════════════════════════
-   نجوم: 4-5 → مباشرة عالتقييم بجوجل (بدون شاشة وسط)
-            1-3 → شاشة الفيدباك الخاص متل قبل
-   ═══════════════════════════════════════════ */
-function handleStarSelected(val) {
-  selectedRating = val;
-  stars.forEach(s => {
-    if (parseInt(s.dataset.val) <= val) {
-      s.classList.add('pop');
-      setTimeout(() => s.classList.remove('pop'), 350);
-    }
-  });
-  highlightStars(val);
-
-  if (val >= 4) {
-    // فتح تبويب جوجل فوراً — لازم يصير sync جوا الـ click مباشرة
-    window.open(getGoogleURL(), '_blank');
-    // إرسال webhook بالخلفية بدون تعليق (المستخدم ما كتب شي)
-    sendWebhook('', 'positive');
-    setTimeout(() => {
-      const msgEl = document.getElementById('thanks-copy-msg');
-      if (msgEl) {
-        msgEl.textContent = i18n[currentLang].redirecting_msg;
-        msgEl.style.display = 'block';
-      }
-      goTo('screen-thanks');
-    }, 380);
-  } else {
-    setTimeout(() => showFeedbackScreen(val), 420);
-  }
-}
-
-stars.forEach(star => {
-  const val = parseInt(star.dataset.val);
-  star.addEventListener('mouseenter', () => highlightStars(val));
-  star.addEventListener('mouseleave', resetStarHover);
-  star.addEventListener('click', () => handleStarSelected(val));
-  star.addEventListener('touchstart', e => { e.preventDefault(); highlightStars(val); }, { passive: false });
-  star.addEventListener('touchend', e => {
-    e.preventDefault();
-    handleStarSelected(val);
-  }, { passive: false });
-});
-
-function showFeedbackScreen(rating) {
-  const url = getGoogleURL();
-  googleLinkHigh.href = url;
-  googleLinkLow.href  = url;
-  // من هلق هاد المسار بيصير بس للتقييم المنخفض (1-3)، بس خليناها عامة احتياط
-  if (rating >= 4) {
-    highBlock.classList.remove('hidden');
-    lowBlock.classList.add('hidden');
-  } else {
-    lowBlock.classList.remove('hidden');
-    highBlock.classList.add('hidden');
-  }
-  goTo('screen-feedback');
-}
-
+// ── Clipboard ─────────────────────────────────
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -290,114 +248,69 @@ function launchConfetti() {
   const ctx = canvas.getContext('2d');
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
-
   const pieces = Array.from({ length: 80 }, () => ({
     x: Math.random() * canvas.width,
     y: Math.random() * -canvas.height,
     r: Math.random() * 8 + 4,
     d: Math.random() * 80 + 20,
     color: ['#f5a623','#2563eb','#10b981','#f43f5e','#a855f7'][Math.floor(Math.random()*5)],
-    tilt: Math.random() * 10 - 10,
     tiltAngle: 0,
     tiltSpeed: Math.random() * 0.1 + 0.05,
   }));
-
   let frame = 0;
-  function draw() {
+  (function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     pieces.forEach(p => {
       p.tiltAngle += p.tiltSpeed;
       p.y += Math.cos(frame / 20 + p.d) + 2;
       p.x += Math.sin(frame / 30) * 0.5;
-      p.tilt = Math.sin(p.tiltAngle) * 12;
+      const tilt = Math.sin(p.tiltAngle) * 12;
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.ellipse(p.x + p.tilt, p.y, p.r, p.r / 2, p.tilt * 0.1, 0, Math.PI * 2);
+      ctx.ellipse(p.x + tilt, p.y, p.r, p.r / 2, tilt * 0.1, 0, Math.PI * 2);
       ctx.fill();
     });
     frame++;
     if (frame < 180) requestAnimationFrame(draw);
     else { ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.style.display = 'none'; }
-  }
-  draw();
+  })();
 }
 
-// ── Show thanks screen (no-copy path, used for low ratings) ───
-function showThanksSimple() {
-  const msgEl = document.getElementById('thanks-copy-msg');
-  const googleBtn = document.getElementById('thanks-google-btn');
-  const skipBtn = document.getElementById('thanks-skip-btn');
-  if (msgEl) msgEl.style.display = 'none';
-  if (googleBtn) googleBtn.style.display = 'none';
-  if (skipBtn) skipBtn.style.display = 'none';
-  goTo('screen-thanks');
-}
-
-function setBtnLoading(btn, loading) {
-  if (loading) {
-    btn.disabled = true;
-    btn.classList.add('loading');
-    btn._originalText = btn.textContent;
-    btn.textContent = i18n[currentLang].sending;
-  } else {
-    btn.disabled = false;
-    btn.classList.remove('loading');
-    btn.textContent = btn._originalText;
-  }
-}
-
-/* ═══════════════════════════════════════════
-   زر "שלח והעתק לגוגל" داخل شاشة الفيدباك (احتياطي —
-   ما رح يبين للمستخدم أصلاً لأنو 4-5 نجوم بتتخطى هاي
-   الشاشة بالكامل، بس بيضل شغال إذا حدا رجع بالمتصفح)
-   ═══════════════════════════════════════════ */
-sendHighBtn.addEventListener('click', async () => {
-  if (sendHighBtn.disabled) return;
-  const comment = commentHigh.value.trim();
-  const googleWin = window.open(getGoogleURL(), '_blank');
-  setBtnLoading(sendHighBtn, true);
-  if (comment) await copyToClipboard(comment);
-  await sendWebhook(comment, 'positive');
-  launchConfetti();
-  const msgEl = document.getElementById('thanks-copy-msg');
-  if (msgEl && comment) {
-    msgEl.textContent = i18n[currentLang].copied_msg;
+// ── Thanks screen ─────────────────────────────
+function showThanks(wentToGoogle, copied) {
+  const t = i18n[currentLang];
+  const msgEl    = document.getElementById('thanks-copy-msg');
+  const againBtn = document.getElementById('thanks-google-btn');
+  if (wentToGoogle) {
+    msgEl.textContent = copied ? t.copied_msg : t.thanks_sub;
     msgEl.style.display = 'block';
+    againBtn.style.display = 'flex';
+    againBtn.onclick = () => window.open(getGoogleURL(), '_blank');
+  } else {
+    msgEl.style.display = 'none';
+    againBtn.style.display = 'none';
   }
+  if (selectedRating >= 4) launchConfetti();
   goTo('screen-thanks');
-  setBtnLoading(sendHighBtn, false);
-});
+}
 
-googleLinkHigh.addEventListener('click', (e) => {
-  e.preventDefault();
-  const comment = commentHigh.value.trim();
+// ── Buttons (same for every rating) ───────────
+googleBtn.addEventListener('click', async () => {
+  const comment = commentEl.value.trim();
+  // Start the copy and open the tab inside the same tap, so mobile browsers allow both
+  const copyPromise = comment ? copyToClipboard(comment) : Promise.resolve(false);
   window.open(getGoogleURL(), '_blank');
-  sendWebhook(comment, 'positive');
-  if (comment) copyToClipboard(comment);
-  goTo('screen-thanks');
+  const copied = await copyPromise;
+  sendWebhook(comment, 'google');
+  showThanks(true, copied);
 });
 
-/* ═══════════════════════════════════════════
-   LOW RATING — بياخد اسم وتلفون اختياري
-   ═══════════════════════════════════════════ */
-sendLowBtn.addEventListener('click', async () => {
-  if (sendLowBtn.disabled) return;
-  const comment = commentLow.value.trim();
-  const name  = nameLow  ? nameLow.value.trim()  : '';
-  const phone = phoneLow ? phoneLow.value.trim() : '';
-  setBtnLoading(sendLowBtn, true);
-  await sendWebhook(comment, 'urgent', { name, phone });
-  showThanksSimple();
-  setBtnLoading(sendLowBtn, false);
-});
-
-googleLinkLow.addEventListener('click', (e) => {
-  e.preventDefault();
-  const name  = nameLow  ? nameLow.value.trim()  : '';
-  const phone = phoneLow ? phoneLow.value.trim() : '';
-  window.open(getGoogleURL(), '_blank');
-  sendWebhook(commentLow.value.trim(), 'normal', { name, phone });
-  goTo('screen-thanks');
+privateBtn.addEventListener('click', async () => {
+  if (privateBtn.disabled) return;
+  privateBtn.disabled = true;
+  privateBtn.textContent = i18n[currentLang].sending;
+  await sendWebhook(commentEl.value.trim(), 'private');
+  showThanks(false, false);
 });
 
 setLang('he');
